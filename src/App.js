@@ -37,7 +37,7 @@ const App = () => {
     ? persons.filter((person) => person.name.toUpperCase().includes(filter.toUpperCase()))
     : persons
 
-  const addNewName = (event) => {
+  const addNewPerson = (event) => {
     event.preventDefault()
     const newPerson = {
       name: newName,
@@ -46,9 +46,15 @@ const App = () => {
     if (persons.map((person) => person.name).includes(newName)) {
       window.alert(`${newName} is already added to phonebook`)
     } else {
-      setPersons(persons.concat(newPerson))
-      setNewName('')
-      setNewNumber('')
+
+      axios
+        .post('http://localhost:3001/persons', newPerson)
+        .then(response => {
+          console.log('Response data',response.data)
+          setPersons(persons.concat(response.data))
+          setNewName('')
+          setNewNumber('')
+        })
     }
   }
 
@@ -58,7 +64,7 @@ const App = () => {
       <Filter filter={filter} handleFilterChange={handleFilterChange}/>
       <h3>add a new</h3>
       <PersonForm 
-        onSubmit={addNewName}
+        onSubmit={addNewPerson}
         newName={newName} handleNameChange={handleNameChange}
         newNumber={newNumber} handleNumberChange={handleNumberChange}
       />
