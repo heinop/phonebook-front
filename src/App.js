@@ -6,11 +6,11 @@ import Persons from './components/Persons'
 import personService from './services/persons'
 
 const App = () => {
-  const [ persons, setPersons] = useState([]) 
-  const [ newName, setNewName ] = useState('')
-  const [ newNumber, setNewNumber ] = useState('')
-  const [ filter, setFilter ] = useState('')
-  const [ notification, setNotification ] = useState('start notification')
+  const [persons, setPersons] = useState([])
+  const [newName, setNewName] = useState('')
+  const [newNumber, setNewNumber] = useState('')
+  const [filter, setFilter] = useState('')
+  const [notification, setNotification] = useState(null)
 
   useEffect(() => {
     personService.getAll()
@@ -31,7 +31,7 @@ const App = () => {
     setFilter(event.target.value)
   }
 
-  const personsToShow = filter 
+  const personsToShow = filter
     ? persons.filter((person) => person.name.toUpperCase().includes(filter.toUpperCase()))
     : persons
 
@@ -42,19 +42,33 @@ const App = () => {
 
     if (existingPerson) {
       if (window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)) {
-        const personToUpdate = { ...existingPerson, number: newNumber}
-        personService.update(personToUpdate)
+        const personToUpdate = { ...existingPerson, number: newNumber }
+        personService
+          .update(personToUpdate)
           .then(returnedPerson => {
-            setPersons(persons.map(p => 
-              p.id === returnedPerson.id 
-              ? returnedPerson 
-              : p))
+            setPersons(persons.map(p =>
+              p.id === returnedPerson.id
+                ? returnedPerson
+                : p))
             setNewName('')
             setNewNumber('')
-            setNotification(`Updated ${returnedPerson.name}`)
+            setNotification({
+              message: `Updated ${returnedPerson.name}`,
+              type: 'info'
+            })
             setTimeout(() => {
               setNotification(null);
             }, 5000)
+          })
+          .catch(error => {
+            setNotification({
+              message: `Information of ${personToUpdate.name} has already been removed from server`,
+              type: 'error'
+            })
+            setTimeout(() => {
+              setNotification(null);
+            }, 5000)
+            setPersons(persons.filter(p => p.id !== personToUpdate.id))
           })
       }
     } else {
@@ -67,7 +81,10 @@ const App = () => {
           setPersons(persons.concat(returnedPerson))
           setNewName('')
           setNewNumber('')
-          setNotification(`Added ${returnedPerson.name}`)
+          setNotification({
+            message: `Added ${returnedPerson.name}`,
+            type: 'info'
+          })
           setTimeout(() => {
             setNotification(null);
           }, 5000)
@@ -82,7 +99,10 @@ const App = () => {
       personService.remove(id);
       console.log('Deleted person', id)
       setPersons(persons.filter(p => p.id !== id))
-      setNotification(`Deleted ${personToDelete.name}`)
+      setNotification({
+        message: `Deleted ${personToDelete.name}`,
+        type: 'info'
+      })
       setTimeout(() => {
         setNotification(null);
       }, 5000)
@@ -92,16 +112,16 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
-      <Notification message={notification} />
-      <Filter filter={filter} handleFilterChange={handleFilterChange}/>
+      <Notification notification={notification} />
+      <Filter filter={filter} handleFilterChange={handleFilterChange} />
       <h3>add a new</h3>
-      <PersonForm 
+      <PersonForm
         onSubmit={addNewPerson}
         newName={newName} handleNameChange={handleNameChange}
         newNumber={newNumber} handleNumberChange={handleNumberChange}
       />
       <h3>Numbers</h3>
-      <Persons persons={personsToShow} handleDelete={deletePerson}/>
+      <Persons persons={personsToShow} handleDelete={deletePerson} />
     </div>
   )
 
